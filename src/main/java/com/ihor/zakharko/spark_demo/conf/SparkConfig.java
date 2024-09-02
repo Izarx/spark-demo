@@ -42,6 +42,8 @@ public class SparkConfig {
                 .set("spark.hadoop.fs.s3a.attempts.maximum", "3")
                 .set("spark.hadoop.fs.s3a.retry.limit", "3")
                 .set("spark.hadoop.fs.s3a.retry.interval", "1000ms")
+                .set("spark.local.dir", "C:\\Users\\Public\\spark")
+                .set("spark.sql.warehouse.dir","C:\\Users\\Public\\sparkWarehouse")
                 .set("spark.hadoop.home.dir", "C:\\Users\\Zakharko.Ihor\\hadoop");
 
         return SparkSession.builder()

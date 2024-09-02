@@ -3,6 +3,7 @@ package com.ihor.zakharko.spark_demo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.sql.*;
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException;
 import org.apache.spark.sql.streaming.*;
 import org.apache.spark.sql.types.StructType;
 import org.springframework.stereotype.Service;
@@ -51,6 +52,8 @@ public class PopularWordsServiceImpl implements PopularWordsService {
     }
 
     public long someMethod() {
+        checkAndCreateDb();
+
         Dataset<Row> sourceDf = session.readStream()
                 .format("kafka")
                 .option("kafka.bootstrap.servers", "localhost:9092")
@@ -62,17 +65,21 @@ public class PopularWordsServiceImpl implements PopularWordsService {
                 .load();
 
         // Cast Kafka key and value to String
-        Dataset<Row> kafkaDf = sourceDf.select(col("value").cast("string"));
-
-        kafkaDf.printSchema();
+        Dataset<Row> kafkaDf = sourceDf.selectExpr("CAST(key AS STRING)", "CAST(value AS STRING)")
+                .withColumn("proc_timestamp", functions.current_timestamp())
+                .withColumn("proc_year", functions.year(functions.col("proc_timestamp")))
+                .withColumn("proc_month", functions.month(functions.col("proc_timestamp")))
+                .withColumn("proc_day", functions.dayofmonth(functions.col("proc_timestamp")));
 
         try {
             StreamingQuery query = kafkaDf.writeStream()
-                    .format("console")
+                    .format("delta")
                     .outputMode("append")  // Changed to "append" for efficiency
+                    .partitionBy("proc_year", "proc_month", "proc_day")
                     .option("checkpointLocation", "s3a://my-test-bucket/checkpoints/transaction_ingestion_checkpoint")
-                    .option("truncate", "false")
-                    .start();
+                    .toTable("journal.sales_transaction_raw");
+//                    .option("truncate", "false")
+//                    .start();
 
             query.awaitTermination();
         } catch (StreamingQueryException | TimeoutException e) {
@@ -83,8 +90,14 @@ public class PopularWordsServiceImpl implements PopularWordsService {
         return 0L;  // Consider meaningful return values or void method
     }
 
-    public void getFromKafka() {
-
+    private void checkAndCreateDb() {
+        try {
+            session.sql("USE journal");
+        } catch (Exception e) {
+            // Create the database if it does not exist
+            session.sql("CREATE DATABASE journal");
+            session.sql("USE journal");
+        }
     }
 
 }
