@@ -1,0 +1,113 @@
+version: "3.7"
+
+services:
+
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio-server
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=theroot
+      - MINIO_ROOT_PASSWORD=theroot123
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - C:\minio\data:/data
+    networks:
+      - spark-network1
+  spark-master:
+    image: bitnami/spark:3.5.1
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    extra_hosts:
+      - "host.docker.internal:192.168.50.243"
+#      - "host.docker.internal:10.187.2.147"
+      - "gateway.docker.internal:192.168.50.243"
+#      - "gateway.docker.internal:10.187.2.147"
+    volumes:
+      - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hadoop_conf/core-site.xml:/opt/spark/etc/hadoop/core-site.xml
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    networks:
+      - spark-network1
+  spark-worker-a:
+    image: bitnami/spark:3.5.1
+    ports:
+      - "9091:8080"
+      - "7000:7000"
+      - "8081:8081"
+    extra_hosts:
+#      - "host.docker.internal:10.187.2.147"
+      - "host.docker.internal:192.168.50.243"
+#      - "gateway.docker.internal:10.187.2.147"
+      - "gateway.docker.internal:192.168.50.243"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      #      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=2
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+    volumes:
+      - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hadoop_conf/core-site.xml:/opt/spark/etc/hadoop/core-site.xml
+      - ./worker-a-code:/opt/spark/workdir
+    networks:
+      - spark-network1
+  #  spark-worker-b:
+  #    image: docker.io/bitnami/spark:3.5.2
+  #    ports:
+  #      - "9092:8080"
+  #      - "7001:7000"
+  #      - "8082:8081"
+  #    extra_hosts:
+  #      - "host.docker.internal:192.168.0.109"
+  #      - "gateway.docker.internal:192.168.0.109"
+  #    depends_on:
+  #      - spark-master
+  #    environment:
+  #      - SPARK_MODE=worker
+  #      - SPARK_MASTER_URL=spark://spark-master:7077
+  #      - SPARK_WORKER_MEMORY=1G
+  #      - SPARK_WORKER_CORES=1
+  #      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+  #      - SPARK_RPC_ENCRYPTION_ENABLED=no
+  #      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+  #      - SPARK_SSL_ENABLED=no
+  #      - SPARK_USER=spark
+  #    volumes:
+  #      - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+  #      - ./hadoop_conf/core-site.xml:/opt/spark/etc/hadoop/core-site.xml
+  #      - ./worker-b-code:/opt/spark/workdir
+  #    networks:
+  #      - spark-network1
+  busybox:
+    image: yauritux/busybox-curl
+    networks:
+      - spark-network1
+    command:
+      - sleep
+      - "3600"
+
+networks:
+  spark-network1:
+    # Use a custom driver
+    driver: bridge
