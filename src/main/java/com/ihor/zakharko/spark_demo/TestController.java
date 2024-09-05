@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/test")
 @RequiredArgsConstructor
 public class TestController {
-    private final PopularWordsService popularWordsService;
+    private final SparkDemoService popularWordsService;
 
     @GetMapping
     public ResponseEntity<Long> getTopX() {

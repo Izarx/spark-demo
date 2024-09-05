@@ -1,24 +1,14 @@
 package com.ihor.zakharko.spark_demo;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.sql.*;
-import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException;
-import org.apache.spark.sql.streaming.*;
-import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.streaming.StreamingQuery;
+import org.apache.spark.sql.streaming.StreamingQueryException;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.TimeoutException;
-
-import static org.apache.spark.sql.types.DataTypes.StringType;
-import static org.apache.spark.sql.functions.*;
-
-@Slf4j
 @Service
 @RequiredArgsConstructor
-public class PopularWordsServiceImpl implements PopularWordsService {
-    private static final StructType RSVP_SCHEMA = new StructType()
-            .add("1", StringType, true);
+public class SparkDemoServiceImpl implements SparkDemoService {
 
     private final SparkSession session;
 
@@ -52,7 +42,7 @@ public class PopularWordsServiceImpl implements PopularWordsService {
     }
 
     public long someMethod() {
-        checkAndCreateDb();
+//        checkAndCreateDb();
 
         Dataset<Row> sourceDf = session.readStream()
                 .format("kafka")
@@ -71,22 +61,34 @@ public class PopularWordsServiceImpl implements PopularWordsService {
                 .withColumn("proc_month", functions.month(functions.col("proc_timestamp")))
                 .withColumn("proc_day", functions.dayofmonth(functions.col("proc_timestamp")));
 
-        try {
-            StreamingQuery query = kafkaDf.writeStream()
-                    .format("delta")
-                    .outputMode("append")  // Changed to "append" for efficiency
-                    .partitionBy("proc_year", "proc_month", "proc_day")
-                    .option("checkpointLocation", "s3a://my-test-bucket/checkpoints/transaction_ingestion_checkpoint")
-                    .toTable("journal.sales_transaction_raw");
-//                    .option("truncate", "false")
+//        try {
+//            StreamingQuery query = kafkaDf.writeStream()
+//                    .format("delta")
+//                    .outputMode("append")  // Changed to "append" for efficiency
+//                    .option("path", "s3a://my-test-bucket/transaction_raw")
+////                    .partitionBy("proc_year", "proc_month", "proc_day")
+//                    .option("checkpointLocation", "s3a://my-test-bucket/checkpoints/transaction_ingestion_checkpoint")
+////                    .toTable("journal.sales_transaction_raw");
+////                    .option("truncate", "false")
 //                    .start();
+//
+//            query.awaitTermination();
+//        } catch (StreamingQueryException | TimeoutException e) {
+//            e.printStackTrace();  // Better error logging
+//            throw new RuntimeException(e);
+//        }
+        StreamingQuery start = kafkaDf.writeStream()
+                .format("delta")
+                .outputMode("append")
+                .option("checkpointLocation", "s3a://my-test-bucket/checkpoints/transaction_ingestion_checkpoint")
+                .start("s3a://my-test-bucket/transaction_raw");
 
-            query.awaitTermination();
-        } catch (StreamingQueryException | TimeoutException e) {
+        try {
+            start.awaitTermination();
+        } catch (StreamingQueryException e) {
             e.printStackTrace();  // Better error logging
             throw new RuntimeException(e);
         }
-
         return 0L;  // Consider meaningful return values or void method
     }
 

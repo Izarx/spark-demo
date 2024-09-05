@@ -1,0 +1,80 @@
+# Use the official OpenJDK image as the base image
+FROM openjdk:17.0.1-jdk-slim
+
+# Set environment variables for versions
+ENV SPARK_VER=3.3.2
+ENV SCALA_VER=2.13
+ENV DELTA_VER=2.3.0
+ENV HADOOP_AWS_VER=3.3.4
+ENV ELASTIC_HADOOP_VER=8.6.2
+ENV AWS_JAVA_SDK_VER=1.12.425
+ENV KAFKA_VER=2.6.2
+ENV COMMONS_POOL2_VER=2.11.1
+ENV AWS_JAVA_SDK_GLUE_VER=1.12.436
+
+USER root
+
+# Update and install necessary packages
+RUN set -ex && \
+    sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
+    apt-get -o Acquire::https::Verify-Peer=false update && \
+    apt-get -o Acquire::https::Verify-Peer=false install -y \
+        curl \
+        bash \
+        tini \
+        libc6 \
+        libpam-modules \
+        krb5-user \
+        libnss3 \
+        procps && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Spark
+RUN mkdir -p /opt/spark && \
+    curl -fsSL https://archive.apache.org/dist/spark/spark-${SPARK_VER}/spark-${SPARK_VER}-bin-hadoop3-scala${SCALA_VER}.tgz | \
+        tar -xz -C /opt/spark --strip-components=1
+
+ENV SPARK_HOME=/opt/spark
+ENV PATH="${SPARK_HOME}/bin:${PATH}"
+
+# Install Delta Lake and other dependencies
+RUN mkdir -p /opt/spark/jars && \
+    curl -fsSL https://repo1.maven.org/maven2/io/delta/delta-core_${SCALA_VER}/${DELTA_VER}/delta-core_${SCALA_VER}-${DELTA_VER}.jar -o /opt/spark/jars/delta-core_${SCALA_VER}-${DELTA_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/io/delta/delta-storage-s3-dynamodb/${DELTA_VER}/delta-storage-s3-dynamodb-${DELTA_VER}.jar -o /opt/spark/jars/delta-storage-s3-dynamodb-${DELTA_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/io/delta/delta-contribs_${SCALA_VER}/${DELTA_VER}/delta-contribs_${SCALA_VER}-${DELTA_VER}.jar -o /opt/spark/jars/delta-contribs_${SCALA_VER}-${DELTA_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_AWS_VER}/hadoop-aws-${HADOOP_AWS_VER}.jar -o /opt/spark/jars/hadoop-aws-${HADOOP_AWS_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/spark/spark-hadoop-cloud_${SCALA_VER}/${SPARK_VER}/spark-hadoop-cloud_${SCALA_VER}-${SPARK_VER}.jar -o /opt/spark/jars/spark-hadoop-cloud_${SCALA_VER}-${SPARK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/kafka/kafka-clients/${KAFKA_VER}/kafka-clients-${KAFKA_VER}.jar -o /opt/spark/jars/kafka-clients-${KAFKA_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/spark/spark-streaming-kafka-0-10_${SCALA_VER}/${SPARK_VER}/spark-streaming-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar -o /opt/spark/jars/spark-streaming-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/spark/spark-token-provider-kafka-0-10_${SCALA_VER}/${SPARK_VER}/spark-token-provider-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar -o /opt/spark/jars/spark-token-provider-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/spark/spark-sql-kafka-0-10_${SCALA_VER}/${SPARK_VER}/spark-sql-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar -o /opt/spark/jars/spark-sql-kafka-0-10_${SCALA_VER}-${SPARK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/elasticsearch/elasticsearch-spark-30_2.13/${ELASTIC_HADOOP_VER}/elasticsearch-spark-30_2.13-${ELASTIC_HADOOP_VER}.jar -o /opt/spark/jars/elasticsearch-spark-30_2.13-${ELASTIC_HADOOP_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-core/${AWS_JAVA_SDK_VER}/aws-java-sdk-core-${AWS_JAVA_SDK_VER}.jar -o /opt/spark/jars/aws-java-sdk-core-${AWS_JAVA_SDK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-s3/${AWS_JAVA_SDK_VER}/aws-java-sdk-s3-${AWS_JAVA_SDK_VER}.jar -o /opt/spark/jars/aws-java-sdk-s3-${AWS_JAVA_SDK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-dynamodb/${AWS_JAVA_SDK_VER}/aws-java-sdk-dynamodb-${AWS_JAVA_SDK_VER}.jar -o /opt/spark/jars/aws-java-sdk-dynamodb-${AWS_JAVA_SDK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-sts/${AWS_JAVA_SDK_VER}/aws-java-sdk-sts-${AWS_JAVA_SDK_VER}.jar -o /opt/spark/jars/aws-java-sdk-sts-${AWS_JAVA_SDK_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/io/delta/delta-storage/${DELTA_VER}/delta-storage-${DELTA_VER}.jar -o /opt/spark/jars/delta-storage-${DELTA_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/org/apache/commons/commons-pool2/${COMMONS_POOL2_VER}/commons-pool2-${COMMONS_POOL2_VER}.jar -o /opt/spark/jars/commons-pool2-${COMMONS_POOL2_VER}.jar && \
+    curl -fsSL https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-glue/${AWS_JAVA_SDK_GLUE_VER}/aws-java-sdk-glue-${AWS_JAVA_SDK_GLUE_VER}.jar -o /opt/spark/jars/aws-java-sdk-glue-${AWS_JAVA_SDK_GLUE_VER}.jar
+
+# Copy additional JARs and configuration
+COPY jars/opensearch-spark-30_2.13-3.0.0-SNAPSHOT.jar /opt/spark/jars/
+COPY jars/aws-glue-datacatalog-spark-client-3.8.0.jar /opt/spark/jars/
+COPY jars/hive-exec-2.3.9-amzn-3-core.jar /opt/spark/jars/
+COPY jars/hive-metastore-2.3.9-amzn-3.jar /opt/spark/jars/
+COPY jars/hive-common-2.3.9-amzn-3.jar /opt/spark/jars/
+COPY conf/spark-defaults.conf /opt/spark/conf
+
+RUN rm -rf /opt/spark/jars/commons-pool-1.5.4.jar
+
+RUN rm -rf /opt/spark/jars/hive-exec-2.3.9-core.jar
+RUN rm -rf /opt/spark/jars/hive-metastore-2.3.9.jar
+RUN rm -rf /opt/spark/jars/hive-jdbc-2.3.9.jar
+RUN rm -rf /opt/spark/jars/hive-common-2.3.9.jar
+
+COPY /target/spark-demo-0.0.1-SNAPSHOT.jar /spark-demo-0.0.1-SNAPSHOT.jar
+
+USER 1001
+
+# Define default command
+CMD ["spark-submit", "--version"]

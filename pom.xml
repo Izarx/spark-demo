@@ -51,9 +51,15 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.fasterxml.jackson.module</groupId>
+			<artifactId>jackson-module-scala_2.12</artifactId>
+			<version>2.17.2</version>
+		</dependency>
+
+		<dependency>
 			<groupId>io.delta</groupId>
 			<artifactId>delta-spark_2.12</artifactId>
-			<version>3.2.0</version>
+			<version>3.1.0</version>
 		</dependency>
 
 		<dependency>
@@ -66,7 +72,6 @@
 			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-streaming_2.12</artifactId>
 			<version>${spark.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -88,36 +93,6 @@
 			<artifactId>spark-sql_2.12</artifactId>
 			<version>${spark.version}</version>
 		</dependency>
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.spark</groupId>-->
-<!--			<artifactId>spark-hive_2.12</artifactId>-->
-<!--			<version>${spark.version}</version>-->
-<!--		</dependency>-->
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.hive</groupId>-->
-<!--			<artifactId>hive-exec</artifactId>-->
-<!--			<version>3.1.2</version>-->
-<!--		</dependency>-->
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.hive</groupId>-->
-<!--			<artifactId>hive-jdbc</artifactId>-->
-<!--			<version>3.1.2</version>-->
-<!--		</dependency>-->
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.hive</groupId>-->
-<!--			<artifactId>hive-metastore</artifactId>-->
-<!--			<version>3.1.2</version>-->
-<!--		</dependency>-->
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.derby</groupId>-->
-<!--			<artifactId>derby</artifactId>-->
-<!--			<version>10.14.2.0</version>-->
-<!--		</dependency>-->
 
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -141,7 +116,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-bundle</artifactId>
-			<version>1.11.1026</version>
+			<version>1.12.262</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>

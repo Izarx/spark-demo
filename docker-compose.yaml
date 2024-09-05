@@ -22,15 +22,16 @@ services:
     networks:
       - spark-network1
   spark-master:
-    image: bitnami/spark:3.5.1
+    image: custom-spark:3.5.1-extended
+#    image: bitnami/spark:3.5.1
     ports:
       - "8080:8080"
       - "7077:7077"
     extra_hosts:
-      - "host.docker.internal:192.168.50.243"
-#      - "host.docker.internal:10.187.2.147"
-      - "gateway.docker.internal:192.168.50.243"
-#      - "gateway.docker.internal:10.187.2.147"
+#      - "host.docker.internal:192.168.50.243"
+      - "host.docker.internal:10.187.12.15"
+#      - "gateway.docker.internal:192.168.50.243"
+      - "gateway.docker.internal:10.187.12.15"
     volumes:
       - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
       - ./hadoop_conf/core-site.xml:/opt/spark/etc/hadoop/core-site.xml
@@ -44,16 +45,17 @@ services:
     networks:
       - spark-network1
   spark-worker-a:
-    image: bitnami/spark:3.5.1
+    image: custom-spark:3.5.1-extended
+#    image: bitnami/spark:3.5.1
     ports:
       - "9091:8080"
       - "7000:7000"
       - "8081:8081"
     extra_hosts:
-#      - "host.docker.internal:10.187.2.147"
-      - "host.docker.internal:192.168.50.243"
-#      - "gateway.docker.internal:10.187.2.147"
-      - "gateway.docker.internal:192.168.50.243"
+      - "host.docker.internal:10.187.12.15"
+#      - "host.docker.internal:192.168.50.243"
+      - "gateway.docker.internal:10.187.12.15"
+#      - "gateway.docker.internal:192.168.50.243"
     depends_on:
       - spark-master
     environment:
@@ -72,40 +74,13 @@ services:
       - ./worker-a-code:/opt/spark/workdir
     networks:
       - spark-network1
-  #  spark-worker-b:
-  #    image: docker.io/bitnami/spark:3.5.2
-  #    ports:
-  #      - "9092:8080"
-  #      - "7001:7000"
-  #      - "8082:8081"
-  #    extra_hosts:
-  #      - "host.docker.internal:192.168.0.109"
-  #      - "gateway.docker.internal:192.168.0.109"
-  #    depends_on:
-  #      - spark-master
-  #    environment:
-  #      - SPARK_MODE=worker
-  #      - SPARK_MASTER_URL=spark://spark-master:7077
-  #      - SPARK_WORKER_MEMORY=1G
-  #      - SPARK_WORKER_CORES=1
-  #      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-  #      - SPARK_RPC_ENCRYPTION_ENABLED=no
-  #      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-  #      - SPARK_SSL_ENABLED=no
-  #      - SPARK_USER=spark
-  #    volumes:
-  #      - ./conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
-  #      - ./hadoop_conf/core-site.xml:/opt/spark/etc/hadoop/core-site.xml
-  #      - ./worker-b-code:/opt/spark/workdir
-  #    networks:
-  #      - spark-network1
-  busybox:
-    image: yauritux/busybox-curl
-    networks:
-      - spark-network1
-    command:
-      - sleep
-      - "3600"
+#  busybox:
+#    image: yauritux/busybox-curl
+#    networks:
+#      - spark-network1
+#    command:
+#      - sleep
+#      - "3600"
 
 networks:
   spark-network1:
