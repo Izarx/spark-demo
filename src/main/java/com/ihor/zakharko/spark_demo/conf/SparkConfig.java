@@ -1,6 +1,7 @@
 package com.ihor.zakharko.spark_demo.conf;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.serializer.KryoSerializer;
 import org.apache.spark.sql.SparkSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,61 +9,50 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 @Configuration
 public class SparkConfig {
+
     @Bean
     SparkSession sparkContext() {
-        SparkConf sparkConf = new SparkConf();
-        sparkConf.setAppName("Spring Boot Spark App");
-        sparkConf.setMaster("spark://localhost:7077");
-//        sparkConf.set("spark.hadoop.fs.s3a.endpoint", "http://192.168.50.243:9000");
-//        sparkConf.set("spark.hadoop.fs.s3a.access.key", "Fp960Q5nijxeHT0eVYMp");
-//        sparkConf.set("spark.hadoop.fs.s3a.secret.key", "xMHZyvCZy6j2yzvXZSMzTXBCIgUielkjUq899eTg");
-//        sparkConf.set("spark.hadoop.fs.s3a.path.style.access", "true");
-//        sparkConf.set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-//        sparkConf.set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false");
-//        sparkConf.set("spark.hadoop.fs.s3a.connection.maximum", "100");
-//        sparkConf.set("spark.hadoop.io.native.lib.available", "false");
-//        sparkConf.set("spark.submit.deployMode", "cluster");
-//        sparkConf.set("spark.hadoop.fs.s3a.endpoint", "s3.amazonaws.com")  // AWS S3 endpoint
-        sparkConf.set("spark.hadoop.fs.s3a.endpoint", "http://192.168.50.243:9000")  // AWS S3 endpoint
-                .set("spark.hadoop.fs.s3a.access.key", "Fp960Q5nijxeHT0eVYMp")
-                .set("spark.hadoop.fs.s3a.secret.key", "xMHZyvCZy6j2yzvXZSMzTXBCIgUielkjUq899eTg")
-//                .set("spark.hadoop.fs.s3a.connection.ssl.enabled", "true")  // SSL should be enabled for AWS S3
-                .set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")  // SSL should be enabled for AWS S3
-//                .set("spark.hadoop.fs.s3a.path.style.access", "false")  // Set to false for AWS S3
-                .set("spark.hadoop.fs.s3a.path.style.access", "true")  // Set to false for AWS S3
-                .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-                .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-                .set("spark.hadoop.io.native.lib.available", "false")
-                .set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        try {
+            SparkConf sparkConf = new SparkConf()
+                    .setAppName("Spring Boot Spark App")
+                    .setMaster("spark://localhost:7077")
+//                    .setMaster("local[*]")
+                    .set("spark.hadoop.fs.s3a.endpoint", "http://192.168.0.109:9000")
+                    .set("spark.hadoop.fs.s3a.access.key", "minio")
+                    .set("spark.hadoop.fs.s3a.secret.key", "minio123")
+                    .set("spark.hadoop.fs.s3a.connection.ssl.enabled", "false")
+                    .set("spark.hadoop.fs.s3a.path.style.access", "true")
+                    .set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+                    .set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+                    .set("spark.hadoop.io.native.lib.available", "false")
+                    .set("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+                    .set("spark.hadoop.fs.s3a.connection.maximum", "100")
+                    .set("spark.hadoop.fs.s3a.connection.timeout", "5000")
+                    .set("spark.hadoop.fs.s3a.attempts.maximum", "3")
+                    .set("spark.hadoop.fs.s3a.retry.limit", "3")
 
-                // Optional: increase the connection pool size to AWS S3
-//                .set("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
-                .set("spark.hadoop.fs.s3a.connection.maximum", "100")
-                .set("spark.hadoop.fs.s3a.connection.timeout", "5000")
-                .set("spark.hadoop.fs.s3a.attempts.maximum", "3")
-                .set("spark.hadoop.fs.s3a.retry.limit", "3")
-                .set("spark.hadoop.fs.s3a.retry.interval", "1000ms")
-                .set("spark.hadoop.home.dir", "C:\\Users\\Zakharko.Ihor\\hadoop");
+                    .set("spark.submit.deployMode", "client")
+                    .set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+//                    .set("spark.driver.host", "127.0.0.1")
+//                    .set("spark.serializer", "org.apache.spark.serializer.JavaSerializer")
+//                    .set("spark.kryo.registrationRequired", "true")
+//                    .registerKryoClasses(new Class[]{
+//                            scala.collection.immutable.List.class,
+//                            scala.collection.Seq.class,
+//                    })
 
-        return SparkSession.builder()
-                .config(sparkConf)
-//                .enableHiveSupport()
-                .getOrCreate();
+                    .set("spark.hadoop.fs.s3a.retry.interval", "1000ms");
 
-//        var javaSparkContext = spark.sparkContext();
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.endpoint", "http://192.168.50.243:9000");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.endpoint", "http://10.187.2.147:9000");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.access.key", "Fp960Q5nijxeHT0eVYMp");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.secret.key", "xMHZyvCZy6j2yzvXZSMzTXBCIgUielkjUq899eTg");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.path.style.access", "true");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.connection.ssl.enabled", "false");
-//        javaSparkContext.hadoopConfiguration().set("fs.s3a.connection.maximum", "100");
-//        return spark;
+            return SparkSession.builder()
+                    .config(sparkConf)
+                    .getOrCreate();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize Spark Session. Check Spark configuration and S3 settings.", e);
+        }
     }
 
     @Bean
-    public static PropertySourcesPlaceholderConfigurer configurer(){
+    public static PropertySourcesPlaceholderConfigurer configurer() {
         return new PropertySourcesPlaceholderConfigurer();
     }
 }
